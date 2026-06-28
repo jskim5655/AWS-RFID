@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis NFC - 개발자 가이드 및 명세서</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Nanum+Gothic+Coding&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --panel-bg: #ffffff;
+      --border: #e2e8f0;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #0ea5e9;
+      --secondary-light: #e0f2fe;
+      --code-bg: #0f172a;
+      --code-text: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 3rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    header {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 2.5rem;
+      margin-bottom: 1.2rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border-left: 4px solid var(--primary);
+      padding-left: 0.8rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      margin-bottom: 0.6rem;
+      color: var(--text);
+    }
+
+    p {
+      color: var(--text);
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    ul, ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    /* 테이블 스타일링 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.8rem 1rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* 코드 블록 스타일링 */
+    pre, code {
+      font-family: 'Nanum Gothic Coding', monospace;
+    }
+
+    code:not(pre code) {
+      background-color: #f1f5f9;
+      color: #e11d48;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 1.5rem;
+      border-radius: 12px;
+      overflow-x: auto;
+      margin: 1.2rem 0;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* API 박스 */
+    .api-endpoint {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+      background: #fafafb;
+    }
+
+    .api-badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-right: 0.5rem;
+    }
+
+    .api-badge.get {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .api-badge.post {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .api-uri {
+      font-weight: 600;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .api-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+      margin-bottom: 0.6rem;
+    }
+
+    /* 경고 박스 */
+    .alert {
+      background-color: var(--primary-light);
+      border: 1px solid rgba(79, 70, 229, 0.15);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .alert i {
+      color: var(--primary);
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .alert-content p {
+      margin-bottom: 0;
+      font-size: 0.95rem;
+      color: #312e81;
+    }
+
+    footer {
+      text-align: center;
+      padding-top: 2rem;
+      margin-top: 3rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="brand-area">
+        <div class="logo">
+          <i data-lucide="book-open"></i>
+        </div>
+        <div>
+          <h1>Aegis NFC 시스템 가이드</h1>
+          <p class="subtitle">Smart RFID Access Control System Developer Guide</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- 1. 소개 -->
+    <section>
+      <h2><i data-lucide="info"></i> 1. 시스템 개요</h2>
+      <p>
+        Aegis NFC는 ESP8266 NodeMCU 보드와 PN532 RFID 모듈, 0.96인치 OLED, 그리고 패시브 부저를 결합한 하드웨어 디바이스와 AWS EC2 상의 웹 대시보드 서비스가 상호작용하는 <strong>실시간 출입 통제 관리 시스템</strong>입니다.
+      </p>
+    </section>
+
+    <!-- 2. 하드웨어 결선 정보 -->
+    <section>
+      <h2><i data-lucide="cpu"></i> 2. 하드웨어 결선 사양</h2>
+      <p>OLED 디스플레이와 PN532 모듈은 I2C 버스를 병렬로 안전하게 공유하여 작동합니다.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>연결 장치</th>
+            <th>장치 핀</th>
+            <th>NodeMCU 핀</th>
+            <th>설명</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="4"><strong>PN532 RFID</strong><br>(I2C 모드: 1번 ON, 2번 OFF)</td>
+            <td>VCC</td>
+            <td>3V3 (또는 VU)</td>
+            <td>전원 입력</td>
+          </tr>
+          <tr>
+            <td>GND</td>
+            <td>GND</td>
+            <td>접지</td>
+          </tr>
+          <tr>
+            <td>SDA</td>
+            <td>D5 (GPIO 14)</td>
+            <td>I2C 데이터 공유선</td>
+          </tr>
+          <tr>
+            <td>SCL</td>
+            <td>D6 (GPIO 12)</td>
+            <td>I2C 클럭 공유선</td>
+          </tr>
+          <tr>
+            <td rowspan="2"><strong>0.96" OLED</strong><br>(주소: 0x3C)</td>
+            <td>SDA</td>
+            <td>D5 (GPIO 14)</td>
+            <td>I2C 데이터 공유선</td>
+          </tr>
+          <tr>
+            <td>SCL</td>
+            <td>D6 (GPIO 12)</td>
+            <td>I2C 클럭 공유선</td>
+          </tr>
+          <tr>
+            <td rowspan="2"><strong>패시브 부저</strong></td>
+            <td>+ (긴 다리)</td>
+            <td>D7 (GPIO 13)</td>
+            <td>주파수 신호 입력 (저항 100~220Ω 직렬 연결)</td>
+          </tr>
+          <tr>
+            <td>- (짧은 다리)</td>
+            <td>GND</td>
+            <td>접지</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 3. 데이터베이스 테이블 스키마 -->
+    <section>
+      <h2><i data-lucide="database"></i> 3. 데이터베이스 스키마 (MySQL / MariaDB)</h2>
+      <p>
+        AWS EC2 내부에 구축된 <code>aegis_nfc</code> 데이터베이스 테이블 DDL 정의서입니다. 
+        데이터베이스 전용 사용자는 <code>aegis_user</code> (비밀번호: <code>aegis_password</code>) 로 연결하도록 안전하게 구성되었습니다.
+      </p>
+      <pre><code>-- 1. 사용자 테이블
+CREATE TABLE IF NOT EXISTS users (
+  uid VARCHAR(20) PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  dept VARCHAR(50) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. 실시간 출입 이력 로그 테이블
+CREATE TABLE IF NOT EXISTS logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  uid VARCHAR(20) NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  dept VARCHAR(50) NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+    </section>
+
+    <!-- 4. 백엔드 API 명세서 -->
+    <section>
+      <h2><i data-lucide="server"></i> 4. 백엔드 PHP API 명세서</h2>
+      <p>모든 API의 루트 경로는 <code>http://54.116.172.123/api/</code> 입니다. (모든 시각은 한국 표준시 KST 기준으로 자동 보정됩니다.)</p>
+      
+      <!-- API 1 -->
+      <div class="api-endpoint">
+        <div>
+          <span class="api-badge post">POST</span>
+          <span class="api-uri">/api/access.php</span>
+        </div>
+        <div class="api-desc">RFID 카드 접촉 시 데이터 확인 및 로그 적재</div>
+        <p><strong>Request Body (JSON):</strong></p>
+        <pre><code>{ "uid": "84 AC A8 A0" }</code></pre>
+        <p><strong>Response (JSON - 등록 카드인 경우):</strong></p>
+        <pre><code>{
+  "status": "APPROVED",
+  "name": "김준석",
+  "dept": "연구소 개발팀",
+  "uid": "84 AC A8 A0"
+}</code></pre>
+        <p><strong>Response (JSON - 미등록 카드인 경우):</strong></p>
+        <pre><code>{
+  "status": "DENIED",
+  "name": "Unknown",
+  "dept": "미등록 방문객",
+  "uid": "99 AA BB CC"
+}</code></pre>
+      </div>
+
+      <!-- API 2 -->
+      <div class="api-endpoint">
+        <div>
+          <span class="api-badge get">GET</span>
+          <span class="api-uri">/api/logs.php</span>
+        </div>
+        <div class="api-desc">대시보드 실시간 렌더링용 최근 20개 출입 로그 조회</div>
+        <p><strong>Response (JSON):</strong></p>
+        <pre><code>[
+  {
+    "id": 15,
+    "uid": "84 AC A8 A0",
+    "name": "김준석",
+    "dept": "연구소 개발팀",
+    "status": "APPROVED",
+    "time": "16:45:12",
+    "created_at": "2026-06-24 16:45:12"
+  }
+]</code></pre>
+      </div>
+
+      <!-- API 3 -->
+      <div class="api-endpoint">
+        <div>
+          <span class="api-badge get">GET</span>
+          <span class="api-uri">/api/stats.php</span>
+        </div>
+        <div class="api-desc">상단 수치 및 부서별 통계 집계</div>
+        <p><strong>Response (JSON):</strong></p>
+        <pre><code>{
+  "total": 12,
+  "approved": 10,
+  "blocked": 2,
+  "dept_stats": [
+    { "dept": "연구소 개발팀", "count": 8 },
+    { "dept": "영업 기획팀", "count": 2 }
+  ],
+  "time_stats": [
+    { "hour": 16, "count": 12 }
+  ]
+}</code></pre>
+      </div>
+
+      <!-- API 4 -->
+      <div class="api-endpoint">
+        <div>
+          <span class="api-badge post">POST</span>
+          <span class="api-uri">/api/register.php</span>
+        </div>
+        <div class="api-desc">미등록 카드 팝업 모달을 통한 신규 사용자 등록</div>
+        <p><strong>Request Body (JSON):</strong></p>
+        <pre><code>{
+  "uid": "99 AA BB CC",
+  "name": "홍길동",
+  "dept": "네트워크 보안팀",
+  "phone": "010-9999-8888"
+}</code></pre>
+        <p><strong>Response (JSON):</strong></p>
+        <pre><code>{
+  "status": "SUCCESS",
+  "message": "User registered successfully."
+}</code></pre>
+      </div>
+
+      <!-- API 5 -->
+      <div class="api-endpoint">
+        <div>
+          <span class="api-badge get">GET</span>
+          <span class="api-uri">/api/download_csv.php</span>
+        </div>
+        <div class="api-desc">데이터베이스 전체 로그 CSV 파일 엑셀 다운로드 (UTF-8 BOM 탑재)</div>
+      </div>
+    </section>
+
+    <!-- 5. 로컬 아두이노 스케치 프로젝트 -->
+    <section>
+      <h2><i data-lucide="terminal"></i> 5. 로컬 아두이노 스케치 가이드</h2>
+      <p>지금까지 로컬에 작성된 네 가지 스케치 빌드 폴더들입니다.</p>
+      <ul>
+        <li><strong>OledAnimations</strong>: 내장 OLED 디스플레이를 활용한 5종(Starfield, 3D Cube 등) 렌더링 루프 예제</li>
+        <li><strong>RfidTest</strong>: I2C 버스를 공유하는 PN532 리더기와 부저 테스트용 소리 나는 카드 리딩 코드</li>
+        <li><strong>WifiTime</strong>: <code>JUNSEOKIM</code> 와이파이 연결 및 NTP를 이용해 OLED에 KST 시계 시각화</li>
+        <li><strong>RfidAws</strong>: (최종) 와이파이 자동 연결 및 실시간 AWS access.php API 연동, OLED 이름/소속 표시, 부팅/성공/거절 사운드 개별 피드백이 완성된 실시간 연동 펌웨어</li>
+      </ul>
+      
+      <div class="alert">
+        <i data-lucide="info"></i>
+        <div class="alert-content">
+          <p>
+            아두이노 CLI를 사용해 보드에 컴파일 및 업로드할 때는 아래 명령어를 사용해 세션 환경변수(PATH)를 포함해 실행합니다:<br>
+            <code>$env:PATH += ";C:\Program Files\Arduino CLI"</code><br>
+            <code>arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 &lt;폴더명&gt;</code><br>
+            <code>arduino-cli upload -p COM3 --fqbn esp8266:esp8266:nodemcuv2 &lt;폴더명&gt;</code>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      &copy; 2026 Aegis NFC Security Systems. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

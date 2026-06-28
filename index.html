@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis NFC - Smart RFID Access System</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* 핵심 디자인 토큰 및 변수 (다크 모드 기본) */
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f1016 0%, #1a1c29 100%);
+      --panel-bg: rgba(30, 32, 50, 0.6);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --neon-blue: #00f2fe;
+      --neon-purple: #4facfe;
+      --neon-green: #39ff14;
+      --neon-red: #ff3b30;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --glow-blue: 0 0 15px rgba(0, 242, 254, 0.4);
+      --glow-purple: 0 0 15px rgba(79, 172, 254, 0.4);
+      --modal-overlay: rgba(0, 0, 0, 0.7);
+      --input-bg: rgba(0, 0, 0, 0.3);
+      --input-border: rgba(255, 255, 255, 0.1);
+    }
+
+    /* 라이트 모드 변수 정의 */
+    .light-mode {
+      --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 100%);
+      --panel-bg: rgba(255, 255, 255, 0.85);
+      --panel-border: rgba(0, 0, 0, 0.08);
+      --neon-blue: #0077ff;
+      --neon-purple: #7000ff;
+      --neon-green: #10b981;
+      --neon-red: #ef4444;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --glow-blue: 0 0 12px rgba(0, 119, 255, 0.2);
+      --glow-purple: 0 0 12px rgba(112, 0, 255, 0.2);
+      --modal-overlay: rgba(0, 0, 0, 0.5);
+      --input-bg: rgba(255, 255, 255, 0.9);
+      --input-border: rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* 컨테이너 구조 */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+      flex-grow: 1;
+    }
+
+    /* 1. 헤더 영역 */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--glow-blue);
+      color: #ffffff;
+    }
+
+    .brand-title h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* 시스템 상태 및 제어 도구 */
+    .header-tools {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    .system-status {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--neon-green);
+      box-shadow: 0 0 8px var(--neon-green);
+    }
+
+    .status-indicator.blink {
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    /* 테마 스위치 버튼 */
+    .theme-toggle-btn {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--panel-border) 0px 4px 6px;
+      transition: transform 0.2s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      transform: rotate(15deg) scale(1.05);
+    }
+
+    /* 2. 대시보드 통계 카드 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(0, 242, 254, 0.2);
+    }
+
+    .stat-info p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-info h3 {
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--neon-blue);
+    }
+
+    /* 3. 대시보드 레이아웃 구조 */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+
+    /* 공통 판넬 */
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .panel-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* 4. 로그 테이블 스타일 */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      padding: 0.8rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    td {
+      padding: 1rem;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: rgba(57, 255, 20, 0.12);
+      color: var(--neon-green);
+      border: 1px solid rgba(57, 255, 20, 0.2);
+    }
+
+    .badge-error {
+      background: rgba(255, 59, 48, 0.12);
+      color: var(--neon-red);
+      border: 1px solid rgba(255, 59, 48, 0.2);
+    }
+
+    .font-mono {
+      font-family: monospace;
+      font-size: 0.95rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .btn-register {
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      border: none;
+      color: #ffffff;
+      padding: 0.35rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* 5. 우측 사이드바 제어 패널 */
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* 버튼 스타일 */
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-purple) 100%);
+      color: #ffffff;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: var(--glow-blue);
+      transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--panel-border);
+      box-shadow: none;
+      margin-top: 0.5rem;
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* API 현황판 */
+    .api-info-item {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 0.8rem;
+      font-size: 0.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .api-title {
+      font-weight: 600;
+      color: var(--neon-purple);
+      margin-bottom: 0.2rem;
+    }
+
+    .api-path {
+      font-family: monospace;
+      color: var(--text-main);
+    }
+
+    /* 6. 모달 팝업 레이아웃 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--modal-overlay);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      width: 90%;
+      max-width: 450px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--neon-blue);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* 입력 폼 스타일 */
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+    }
+
+    .form-control {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 0.8rem;
+      color: var(--text-main);
+      font-size: 0.9rem;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--neon-blue);
+    }
+
+    .form-control[readonly] {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* 7. 통계 바 차트 스타일 */
+    .chart-bar-container {
+      margin-bottom: 1rem;
+    }
+
+    .chart-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .chart-bar-bg {
+      background: rgba(255, 255, 255, 0.05);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .chart-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+      box-shadow: var(--glow-blue);
+      width: 0%;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .light-mode .chart-bar-bg {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    /* 빈 데이터 알림 */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 0;
+      color: var(--text-muted);
+    }
+
+    .empty-state i {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: rgba(255, 255, 255, 0.15);
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 헤더 -->
+    <header>
+      <div class="brand">
+        <div class="brand-logo">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <div class="brand-title">
+          <h1>Aegis NFC</h1>
+          <p>IoT Smart RFID Access Monitor</p>
+        </div>
+      </div>
+      <div class="header-tools">
+        <div class="system-status">
+          <div class="status-item">
+            <span class="status-indicator blink"></span>
+            <span>Server Active</span>
+          </div>
+        </div>
+        <!-- 테마 토글 버튼 -->
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="테마 변경">
+          <i data-lucide="moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- 상단 통계 현황 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-info">
+          <p>전체 태그 횟수</p>
+          <h3 id="stat-total">0</h3>
+        </div>
+        <div class="stat-icon">
+          <i data-lucide="activity"></i>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <p>승인 완료 (Access OK)</p>
+          <h3 id="stat-approved" style="color: var(--neon-green)">0</h3>
+        </div>
+        <div class="stat-icon" style="color: var(--neon-green)">
+          <i data-lucide="check-circle"></i>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-info">
+          <p>차단됨 (Access Denied)</p>
+          <h3 id="stat-blocked" style="color: var(--neon-red)">0</h3>
+        </div>
+        <div class="stat-icon" style="color: var(--neon-red)">
+          <i data-lucide="x-circle"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 대시보드 바디 영역 -->
+    <div class="dashboard-layout">
+      
+      <!-- 실시간 모니터 로그 판넬 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i data-lucide="list-collapse" style="color: var(--neon-blue)"></i>
+            <span>실시간 출입 통제 정보</span>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-muted)" id="log-count">0 logs</span>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 18%">시각</th>
+                <th style="width: 25%">카드 UID</th>
+                <th style="width: 20%">사용자</th>
+                <th style="width: 17%">접근 결과</th>
+                <th style="width: 20%">조치 / 소속</th>
+              </tr>
+            </thead>
+            <tbody id="log-table-body">
+              <tr id="empty-row">
+                <td colspan="5">
+                  <div class="empty-state">
+                    <i data-lucide="database-backup"></i>
+                    <p>태깅 데이터가 없습니다.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 제어 및 개발자 가이드 판넬 (우측 사이드바) -->
+      <div class="control-panel">
+        
+        <!-- 시뮬레이터 박스 -->
+        <div class="panel">
+          <div class="panel-title" style="margin-bottom: 0.8rem;">
+            <i data-lucide="cpu" style="color: var(--neon-blue)"></i>
+            <span>RFID 가상 테스터</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem; line-height: 1.4;">
+            아래 시뮬레이션 버튼을 누르면 실제 하드웨어가 카드를 접촉한 것과 같이 백엔드 DB API로 데이터 전송이 이루어지고 화면이 실시간 반영됩니다.
+          </p>
+          <button class="btn" onclick="simulateCardTag()">
+            <i data-lucide="credit-card"></i>
+            <span>가상 카드 태그하기</span>
+          </button>
+          
+          <button class="btn btn-outline" onclick="downloadCSV()">
+            <i data-lucide="download"></i>
+            <span>전체 로그 CSV 다운로드</span>
+          </button>
+        </div>
+
+        <!-- 부서별 실시간 통계 차트 판넬 -->
+        <div class="panel" id="stats-panel">
+          <div class="panel-title" style="margin-bottom: 1.2rem;">
+            <i data-lucide="bar-chart-3" style="color: var(--neon-blue)"></i>
+            <span>부서별 실시간 출입 분포</span>
+          </div>
+          <div id="chart-container">
+            <div class="empty-state" style="padding: 1rem 0;">
+              <p style="font-size: 0.8rem;">수집된 통계 데이터가 없습니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- API 가이드 박스 -->
+        <div class="panel">
+          <div class="panel-title" style="margin-bottom: 0.8rem;">
+            <i data-lucide="link" style="color: var(--neon-purple)"></i>
+            <span>연동 API 정보</span>
+          </div>
+          <div class="api-info-item">
+            <div class="api-title">카드 승인 (POST)</div>
+            <div class="api-path">/api/access.php</div>
+          </div>
+          <div class="api-info-item">
+            <div class="api-title">실시간 로그 (GET)</div>
+            <div class="api-path">/api/logs.php</div>
+          </div>
+          <div class="api-info-item">
+            <div class="api-title">전체 통계 (GET)</div>
+            <div class="api-path">/api/stats.php</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 신규 사용자 등록 모달 팝업 -->
+  <div class="modal-overlay" id="register-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i data-lucide="user-plus"></i>
+          <span>신규 사용자 등록</span>
+        </div>
+        <button class="modal-close" onclick="closeModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="register-form" onsubmit="submitRegisterForm(event)">
+        <div class="form-group">
+          <label for="reg-uid">카드 고유 UID</label>
+          <input type="text" id="reg-uid" class="form-control" readonly>
+        </div>
+        <div class="form-group">
+          <label for="reg-name">성명</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="성명을 입력해 주세요." required>
+        </div>
+        <div class="form-group">
+          <label for="reg-dept">소속 부서</label>
+          <input type="text" id="reg-dept" class="form-control" placeholder="예: 연구소 개발팀, 영업부" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-phone">전화번호</label>
+          <input type="text" id="reg-phone" class="form-control" placeholder="예: 010-1234-5678" required>
+        </div>
+        <button type="submit" class="btn" style="margin-top: 1rem;">
+          <i data-lucide="save"></i>
+          <span>사용자 정보 등록</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 2rem 0; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--panel-border); margin-top: 2rem;">
+    &copy; 2026 Aegis NFC Security Systems. All rights reserved.
+  </footer>
+
+  <!-- Lucide Icons 렌더링 스크립트 -->
+  <script>
+    lucide.createIcons();
+  </script>
+
+  <!-- 프론트엔드 API 연동 및 데이터 관리 스크립트 -->
+  <script>
+    // 테마 설정
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+      } else {
+        document.body.classList.remove('light-mode');
+        document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light-mode');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      
+      const themeIcon = document.getElementById('theme-icon');
+      if (isLight) {
+        themeIcon.setAttribute('data-lucide', 'sun');
+      } else {
+        themeIcon.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    // 부서별 출입 통계 게이지 바(Bar Chart) 렌더링
+    function drawDeptStats(deptStats, totalApproved) {
+      const container = document.getElementById('chart-container');
+      
+      if (!deptStats || deptStats.length === 0 || totalApproved === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="padding: 1rem 0;">
+            <p style="font-size: 0.8rem;">수집된 통계 데이터가 없습니다.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      deptStats.forEach(stat => {
+        const percentage = totalApproved > 0 ? Math.round((stat.count / totalApproved) * 100) : 0;
+        html += `
+          <div class="chart-bar-container">
+            <div class="chart-bar-label">
+              <span style="font-weight: 600; font-size: 0.8rem;">${stat.dept}</span>
+              <span style="color: var(--text-muted); font-size: 0.8rem;">${stat.count}회 (${percentage}%)</span>
+            </div>
+            <div class="chart-bar-bg">
+              <div class="chart-bar-fill" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // 통계 및 출입 로그 데이터 패치
+    async function fetchStats() {
+      try {
+        const response = await fetch('/api/stats.php');
+        const data = await response.json();
+        if (data.status !== "ERROR") {
+          document.getElementById('stat-total').innerText = data.total;
+          document.getElementById('stat-approved').innerText = data.approved;
+          document.getElementById('stat-blocked').innerText = data.blocked;
+
+          // 부서별 점유율 그래프 드로잉
+          drawDeptStats(data.dept_stats, data.approved);
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    }
+
+    async function fetchLogs() {
+      try {
+        const response = await fetch('/api/logs.php');
+        const logs = await response.json();
+        
+        const tbody = document.getElementById('log-table-body');
+        if (logs.length === 0) {
+          tbody.innerHTML = `
+            <tr id="empty-row">
+              <td colspan="5">
+                <div class="empty-state">
+                  <i data-lucide="database-backup"></i>
+                  <p>태깅 데이터가 없습니다.</p>
+                </div>
+              </td>
+            </tr>
+          `;
+          document.getElementById('log-count').innerText = "0 logs";
+          lucide.createIcons();
+          return;
+        }
+
+        let html = '';
+        logs.forEach(log => {
+          const isApproved = log.status === 'APPROVED';
+          const badgeClass = isApproved ? 'badge badge-success' : 'badge badge-error';
+          const statusText = isApproved ? 'ACCESS OK' : 'DENIED';
+          
+          // 미등록 카드(DENIED)인 경우 조치 열에 '등록' 버튼 제공, 등록 카드는 소속 표출
+          const actionOrDept = isApproved 
+            ? log.dept 
+            : `<button class="btn-register" onclick="openRegisterModal('${log.uid}')"><i data-lucide="user-plus"></i>등록</button>`;
+
+          html += `
+            <tr>
+              <td style="color: var(--text-muted)">${log.time}</td>
+              <td><span class="font-mono">${log.uid}</span></td>
+              <td style="font-weight: 600">${log.name}</td>
+              <td><span class="${badgeClass}">${statusText}</span></td>
+              <td>${actionOrDept}</td>
+            </tr>
+          `;
+        });
+
+        tbody.innerHTML = html;
+        document.getElementById('log-count').innerText = `${logs.length} logs`;
+        lucide.createIcons();
+      } catch (error) {
+        console.error('Error fetching logs:', error);
+      }
+    }
+
+    // 모달 제어
+    function openRegisterModal(uid) {
+      document.getElementById('reg-uid').value = uid;
+      document.getElementById('reg-name').value = '';
+      document.getElementById('reg-dept').value = '';
+      document.getElementById('reg-phone').value = '';
+      document.getElementById('register-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('register-modal').classList.remove('active');
+    }
+
+    // 신규 카드 등록 양식 제출
+    async function submitRegisterForm(event) {
+      event.preventDefault();
+      
+      const uid = document.getElementById('reg-uid').value;
+      const name = document.getElementById('reg-name').value;
+      const dept = document.getElementById('reg-dept').value;
+      const phone = document.getElementById('reg-phone').value;
+
+      try {
+        const response = await fetch('/api/register.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid, name, dept, phone })
+        });
+        const result = await response.json();
+        
+        if (result.status === 'SUCCESS') {
+          alert('사용자가 성공적으로 등록되었습니다.');
+          closeModal();
+          // 데이터 강제 즉시 리로드
+          fetchStats();
+          fetchLogs();
+        } else {
+          alert('등록 실패: ' + result.message);
+        }
+      } catch (error) {
+        alert('서버 오류로 등록에 실패했습니다.');
+        console.error('Error registering:', error);
+      }
+    }
+
+    // CSV 파일 다운로드 리디렉션
+    function downloadCSV() {
+      window.location.href = '/api/download_csv.php';
+    }
+
+    // 가상 테스터 카드 태그 시뮬레이션
+    const sampleUIDs = [
+      "84 AC A8 A0", // 등록된 사용자 (김준석)
+      "E2 D4 B2 0A", // 등록된 사용자 (이민아)
+      "05 1F 77 F8", // 등록된 사용자 (박동현)
+      "99 AA BB CC", // 미등록 사용자 (Unknown)
+      "12 34 56 78"  // 미등록 사용자 (Unknown)
+    ];
+
+    async function simulateCardTag() {
+      // 랜덤 UID 선택
+      const randIdx = Math.floor(Math.random() * sampleUIDs.length);
+      const uid = sampleUIDs[randIdx];
+
+      try {
+        // 실제 API/access.php로 요청을 보냄
+        const response = await fetch('/api/access.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid })
+        });
+        const result = await response.json();
+        
+        console.log('Simulation Tag Result:', result);
+        
+        // 렌더링 즉시 갱신
+        fetchStats();
+        fetchLogs();
+
+        // 미등록 카드(DENIED)인 경우 사용자 편의를 위해 자동으로 등록 팝업을 즉시 오픈
+        if (result.status === 'DENIED') {
+          setTimeout(() => {
+            if (confirm(`등록되지 않은 카드(${uid})가 감지되었습니다. 지금 등록 페이지를 여시겠습니까?`)) {
+              openRegisterModal(uid);
+            }
+          }, 300);
+        }
+      } catch (error) {
+        console.error('Simulation error:', error);
+      }
+    }
+
+    // 페이지 진입 초기화 및 주기적 폴링 셋업
+    initTheme();
+    fetchStats();
+    fetchLogs();
+
+    // 3초 간격 실시간 모니터링 폴링
+    setInterval(() => {
+      fetchStats();
+      fetchLogs();
+    }, 3000);
+  </script>
+
+</body>
+</html>

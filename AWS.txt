@@ -1,0 +1,9 @@
+ IP 주소 : 54.116.172.123
+사용자 이름 : admin
+SSHKEY : "C:\Users\SW중심대학사업단\Desktop\AWS\SSHKEY.pem"
+웹 폴더 : /var/www/html
+
+
+
+
+
